@@ -36,11 +36,10 @@ def upgrade() -> None:
     )
 
     # 2. Переносимо дані з weather в precipitation
-    op.execute("""
-        INSERT INTO precipitation (weather_id, precip_mm, precip_in, humidity, cloud, visibility_km, visibility_miles)
-        SELECT id, precip_mm, precip_in, humidity, cloud, visibility_km, visibility_miles
-        FROM weather
-    """)
+    op.execute(sa.text(
+        "INSERT INTO precipitation (weather_id, precip_mm, precip_in, humidity, cloud, visibility_km, visibility_miles) "
+        "SELECT id, precip_mm, precip_in, humidity, cloud, visibility_km, visibility_miles FROM weather"
+    ))
 
     # 3. Видаляємо колонки осадів з weather
     op.drop_column('weather', 'cloud')
@@ -54,25 +53,31 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Downgrade schema."""
     # 1. Повертаємо колонки в weather
-    op.add_column('weather', sa.Column('precip_in', sa.DOUBLE_PRECISION(precision=53), autoincrement=False, nullable=True))
-    op.add_column('weather', sa.Column('visibility_miles', sa.DOUBLE_PRECISION(precision=53), autoincrement=False, nullable=True))
-    op.add_column('weather', sa.Column('precip_mm', sa.DOUBLE_PRECISION(precision=53), autoincrement=False, nullable=True))
-    op.add_column('weather', sa.Column('humidity', sa.INTEGER(), autoincrement=False, nullable=True))
-    op.add_column('weather', sa.Column('visibility_km', sa.DOUBLE_PRECISION(precision=53), autoincrement=False, nullable=True))
-    op.add_column('weather', sa.Column('cloud', sa.INTEGER(), autoincrement=False, nullable=True))
+    op.add_column('weather', sa.Column('precip_in', sa.Float(), nullable=True))
+    op.add_column('weather', sa.Column('visibility_miles', sa.Float(), nullable=True))
+    op.add_column('weather', sa.Column('precip_mm', sa.Float(), nullable=True))
+    op.add_column('weather', sa.Column('humidity', sa.Integer(), nullable=True))
+    op.add_column('weather', sa.Column('visibility_km', sa.Float(), nullable=True))
+    op.add_column('weather', sa.Column('cloud', sa.Integer(), nullable=True))
 
-    # 2. Переносимо дані назад
-    op.execute("""
-        UPDATE weather
-        SET precip_mm = p.precip_mm,
-            precip_in = p.precip_in,
-            humidity = p.humidity,
-            cloud = p.cloud,
-            visibility_km = p.visibility_km,
-            visibility_miles = p.visibility_miles
-        FROM precipitation p
-        WHERE weather.id = p.weather_id
-    """)
+    # 2. Переносимо дані назад (діалект-незалежний синтаксис)
+    bind = op.get_bind()
+    if bind.dialect.name == 'postgresql':
+        op.execute(sa.text(
+            "UPDATE weather SET "
+            "precip_mm = p.precip_mm, precip_in = p.precip_in, "
+            "humidity = p.humidity, cloud = p.cloud, "
+            "visibility_km = p.visibility_km, visibility_miles = p.visibility_miles "
+            "FROM precipitation p WHERE weather.id = p.weather_id"
+        ))
+    else:
+        # MySQL синтаксис: UPDATE ... JOIN
+        op.execute(sa.text(
+            "UPDATE weather JOIN precipitation p ON weather.id = p.weather_id SET "
+            "weather.precip_mm = p.precip_mm, weather.precip_in = p.precip_in, "
+            "weather.humidity = p.humidity, weather.cloud = p.cloud, "
+            "weather.visibility_km = p.visibility_km, weather.visibility_miles = p.visibility_miles"
+        ))
 
     # 3. Видаляємо таблицю precipitation
     op.drop_table('precipitation')
