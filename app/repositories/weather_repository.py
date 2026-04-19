@@ -1,4 +1,5 @@
-from sqlalchemy.orm import Session
+from sqlalchemy import func
+from sqlalchemy.orm import Session, joinedload
 from app.models.weather import Weather
 
 
@@ -11,12 +12,18 @@ class WeatherRepository:
         self.session.commit()
 
     def get_by_country_and_date(self, country: str, date) -> list[Weather]:
-        from sqlalchemy import func
         return (
             self.session.query(Weather)
+            .options(joinedload(Weather.precipitation))
             .filter(
                 func.lower(Weather.country) == country.lower(),
                 func.date(Weather.last_updated) == date,
             )
             .all()
         )
+
+    def get_available_countries(self) -> list[str]:
+        return [
+            row[0] for row in
+            self.session.query(Weather.country).distinct().order_by(Weather.country).all()
+        ]
