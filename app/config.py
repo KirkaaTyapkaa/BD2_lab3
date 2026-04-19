@@ -1,7 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = "postgresql://postgres:Kirik_10@localhost:5432/weather_db"
+POSTGRES_URL = "postgresql://postgres:Kirik_10@localhost:5432/weather_db"
+MYSQL_URL = "mysql+pymysql://root@localhost:3306/weather_db"
+
+DATABASE_URL = POSTGRES_URL
 
 engine = create_engine(DATABASE_URL, echo=False)
 SessionLocal = sessionmaker(bind=engine)

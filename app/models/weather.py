@@ -47,7 +47,7 @@ class Weather(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     # Обов'язкові колонки
-    country = Column(String, nullable=False)                          # текстова
+    country = Column(String(255), nullable=False)                      # текстова
     wind_degree = Column(Integer)                                     # ціле число
     wind_kph = Column(Float)                                          # дробне число
     wind_direction = Column(Enum(WindDirection), nullable=True)       # enum
