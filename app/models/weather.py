@@ -1,6 +1,7 @@
 import enum
 
-from sqlalchemy import Column, Integer, Float, String, DateTime, Time, Enum
+from sqlalchemy import Column, Integer, Float, String, DateTime, Time, Enum, ForeignKey
+from sqlalchemy.orm import relationship
 from app.config import Base
 
 
@@ -23,6 +24,22 @@ class WindDirection(enum.Enum):
     NNW = "NNW"
 
 
+class Precipitation(Base):
+    __tablename__ = "precipitation"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    weather_id = Column(Integer, ForeignKey("weather.id"), nullable=False, unique=True)
+
+    precip_mm = Column(Float)
+    precip_in = Column(Float)
+    humidity = Column(Integer)
+    cloud = Column(Integer)
+    visibility_km = Column(Float)
+    visibility_miles = Column(Float)
+
+    weather = relationship("Weather", back_populates="precipitation")
+
+
 class Weather(Base):
     __tablename__ = "weather"
 
@@ -36,10 +53,4 @@ class Weather(Base):
     last_updated = Column(DateTime, nullable=True)                    # дата
     sunrise = Column(Time, nullable=True)                             # час
 
-    # Колонки категорії "Осади" (варіант 3)
-    precip_mm = Column(Float)
-    precip_in = Column(Float)
-    humidity = Column(Integer)
-    cloud = Column(Integer)
-    visibility_km = Column(Float)
-    visibility_miles = Column(Float)
+    precipitation = relationship("Precipitation", back_populates="weather", uselist=False)

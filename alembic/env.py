@@ -15,7 +15,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 from app.config import Base
-from app.models.weather import Weather  # noqa: F401
+from app.models.weather import Weather, Precipitation  # noqa: F401
 
 target_metadata = Base.metadata
 
