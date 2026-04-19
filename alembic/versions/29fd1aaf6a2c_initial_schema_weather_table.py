@@ -45,7 +45,5 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Downgrade schema."""
     op.drop_table('weather')
-    # PostgreSQL створює окремий тип для Enum, треба його видалити
-    bind = op.get_bind()
-    if bind.dialect.name == 'postgresql':
-        op.execute("DROP TYPE IF EXISTS winddirection")
+    # Видаляємо тип Enum (в PostgreSQL це окремий об'єкт, в MySQL — ні)
+    sa.Enum(name='winddirection').drop(op.get_bind(), checkfirst=True)

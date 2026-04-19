@@ -60,24 +60,17 @@ def downgrade() -> None:
     op.add_column('weather', sa.Column('visibility_km', sa.Float(), nullable=True))
     op.add_column('weather', sa.Column('cloud', sa.Integer(), nullable=True))
 
-    # 2. Переносимо дані назад (діалект-незалежний синтаксис)
-    bind = op.get_bind()
-    if bind.dialect.name == 'postgresql':
-        op.execute(sa.text(
-            "UPDATE weather SET "
-            "precip_mm = p.precip_mm, precip_in = p.precip_in, "
-            "humidity = p.humidity, cloud = p.cloud, "
-            "visibility_km = p.visibility_km, visibility_miles = p.visibility_miles "
-            "FROM precipitation p WHERE weather.id = p.weather_id"
-        ))
-    else:
-        # MySQL синтаксис: UPDATE ... JOIN
-        op.execute(sa.text(
-            "UPDATE weather JOIN precipitation p ON weather.id = p.weather_id SET "
-            "weather.precip_mm = p.precip_mm, weather.precip_in = p.precip_in, "
-            "weather.humidity = p.humidity, weather.cloud = p.cloud, "
-            "weather.visibility_km = p.visibility_km, weather.visibility_miles = p.visibility_miles"
-        ))
+    # 2. Переносимо дані назад (універсальний SQL через підзапити)
+    op.execute(sa.text(
+        "UPDATE weather SET "
+        "precip_mm = (SELECT p.precip_mm FROM precipitation p WHERE p.weather_id = weather.id), "
+        "precip_in = (SELECT p.precip_in FROM precipitation p WHERE p.weather_id = weather.id), "
+        "humidity = (SELECT p.humidity FROM precipitation p WHERE p.weather_id = weather.id), "
+        "cloud = (SELECT p.cloud FROM precipitation p WHERE p.weather_id = weather.id), "
+        "visibility_km = (SELECT p.visibility_km FROM precipitation p WHERE p.weather_id = weather.id), "
+        "visibility_miles = (SELECT p.visibility_miles FROM precipitation p WHERE p.weather_id = weather.id) "
+        "WHERE EXISTS (SELECT 1 FROM precipitation p WHERE p.weather_id = weather.id)"
+    ))
 
     # 3. Видаляємо таблицю precipitation
     op.drop_table('precipitation')
