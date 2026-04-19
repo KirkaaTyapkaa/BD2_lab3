@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+.idea/
+state.db
+GlobalWeatherRepository.csv
+.claude/
+*.docx
+*.txt
