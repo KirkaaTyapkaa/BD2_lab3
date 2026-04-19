@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import Column, Integer, Float, String, DateTime, Time, Enum, ForeignKey
+from sqlalchemy import Column, Integer, Float, String, DateTime, Time, Enum, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from app.config import Base
 
@@ -36,6 +36,7 @@ class Precipitation(Base):
     cloud = Column(Integer)
     visibility_km = Column(Float)
     visibility_miles = Column(Float)
+    should_go_outside = Column(Boolean, nullable=True)
 
     weather = relationship("Weather", back_populates="precipitation")
 
