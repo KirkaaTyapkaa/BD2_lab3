@@ -1,24 +1,28 @@
 """
 Скрипт міграції з PostgreSQL на MySQL.
-1. Створює структуру таблиць в MySQL через ORM
+1. Накочує Alembic-міграції на MySQL (створює структуру)
 2. Переносить всі дані з PostgreSQL в MySQL
 """
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from app.config import POSTGRES_URL, MYSQL_URL, Base
+from app.config import POSTGRES_URL, MYSQL_URL
 from app.models.weather import Weather, Precipitation  # noqa: F401
 
+from alembic.config import Config
+from alembic import command
 
-def create_tables_mysql():
-    """Створює всі таблиці в MySQL на основі ORM-моделей."""
-    mysql_engine = create_engine(MYSQL_URL)
-    Base.metadata.create_all(mysql_engine)
-    print("Таблиці створені в MySQL.")
+
+def run_alembic_on_mysql():
+    """Накочує всі Alembic-міграції на MySQL."""
+    alembic_cfg = Config("alembic.ini")
+    alembic_cfg.set_main_option("sqlalchemy.url", MYSQL_URL)
+    command.upgrade(alembic_cfg, "head")
+    print("Alembic-міграції накочені на MySQL.")
 
 
 def transfer_data():
-    """Переносить дані з PostgreSQL в MySQL батчами."""
+    """Переносить дані з PostgreSQL в MySQL."""
     pg_engine = create_engine(POSTGRES_URL)
     my_engine = create_engine(MYSQL_URL)
 
@@ -110,6 +114,6 @@ def verify():
 
 if __name__ == "__main__":
     print("=== Міграція з PostgreSQL на MySQL ===\n")
-    create_tables_mysql()
+    run_alembic_on_mysql()
     transfer_data()
     verify()
